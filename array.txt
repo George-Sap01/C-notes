@@ -1,0 +1,16 @@
+Arrays have a lot of syntactic sugar around them.
+When you define an array
+int arr[10][10];
+This is actually just 100 integers one after the other in memory and nothing else.
+But when you pass it as double pointer to a function
+fun(int arr);
+This assumes you have an array of pointers to arrays of int. And the memory layout for that is completely different.
+
+So, when you have a 2D array you have to pass it as a single pointer and dereference it accordingly
+void fun(int arr) {
+    arr[i  10 + j];  i-th row, j-th column
+}
+
+When it's in main, the compiler does that automatically for you
+int arr[10][10];
+arr[i][j];  this is the same dereference as the one in the function
