@@ -7,23 +7,24 @@
 struct record{
     char name[80];
     int age;
+    // we can add more attributes...
 };
 
 /*
-    1. ΑΝΟΙΓΜΑ ΑΡΧΕΙΟΥ
-    2. ΚΛΕΙΣΙΜΟ ΑΡΧΕΙΟΥ
-    3. ΔΕΙΞΕ ΤΟ ΠΛΗΘΟΣ ΤΩΝ ΕΓΓΡΑΦΩΝ 
-    4. ΠΡΟΣΘΗΚΗ RECORD (πρεπει να αυξανεται το n )
-    5. ΤΥΠΩΣΗ RECORD
-    6. ΤΥΠΩΣΗ ΣΤΟΙΧΕΙΩΝ ΑΡΧΕΙΟΥ
+    1. OPEN FILE
+    2. CLOSE FILE
+    3. SHOW NUMBER OF RECORDS
+    4. ADD RECORD
+    5. PRINT RECORD
+    6. PRINT ALL RECORDS
     7. MODIFY RECORD 
-    8. ΔΙΑΓΡΑΦΗ RECORD
-    9. ΑΛΛΑΓΗ ΘΕΣΕΩΝ 
-    10. ΤΕΛΟΣ 
+    8. DELETE RECORD
+    9. CHANGE POSITION BETWEEN TWO RECORDS
+    10. EXIT 
 */
 
-int open_file( char *filename, FILE **fp);
-int show_deposits(FILE *fp, int *n);
+int open_file(char *filename, FILE **fp);
+int num_deposits(FILE *fp, int *n);
 int close_file(FILE *fp);
 int add_record(FILE *fp);
 int print_record(FILE *fp);
@@ -33,13 +34,13 @@ int delete_record(FILE *fp);
 int change_pos(FILE *fp);
 
 
-void main()
-{
-    char file_name[] = "try1.dat";
+int main(){
+
     FILE *fp = NULL;
     int num_of_deposits;
     int choice;
     int check;
+    char file_name[] = "DATA.dat";
 
     while(1)
     {
@@ -50,10 +51,10 @@ void main()
         printf("\n 3. Show deposits");
         printf("\n 4. Add record");
         printf("\n 5. Print record");
-        printf("\n 6. Print all");
+        printf("\n 6. Print all records");
         printf("\n 7. Modify record");
         printf("\n 8. Delete record");
-        printf("\n 9. Change positions");
+        printf("\n 9. Change positions between two records");
         printf("\n10. Exit");
 
         printf("\n\nChoose: ");
@@ -62,7 +63,9 @@ void main()
         switch(choice)
         {    
             case 1: 
-                open_file(file_name, &fp);
+                check = open_file(file_name, &fp);
+                if (check == 0)
+                    { printf("ERROR at opening file"); exit(0); }
                 break;
             case 2:
                 check = close_file(fp);
@@ -72,7 +75,7 @@ void main()
                     { printf("ERROR at closing file"); exit(0); }
                 break;
             case 3:
-                check = show_deposits(fp, &num_of_deposits);
+                check = num_deposits(fp, &num_of_deposits);
                 if(check == 1)
                     printf("\nNumber of deposits: %d", num_of_deposits);
                 break;
@@ -119,14 +122,13 @@ void main()
                 exit(0);
             default:
                 printf("\nWRONG CHOICE");
-
         }
     }
-
+    return 0;
 }
 
 /*
-    αυτη ειναι η δομη του αρχειου, στην αρχη εχει το το πληθος των records που εχει και μετα εχει τα records στην σειρα 
+    this is the structure of the file, in the beggining there is the number of records and then in order there are the records
     -----------------------------------------------
     |               int n                         |
     |               record 1                      |
@@ -134,105 +136,94 @@ void main()
     |               record 3                      |
     |               record 4                      |
                        ...
-
 */
 
 /*
-    γυρναει 1 αν το αρχειο ανοιξε και εναν δεικτη στο αρχειο fp
-    γυρναει 0 αν το αρχειο δεν ανοιξε 
+    returns 1 if the file is successfully open and a pointer to the file
+    returns 0 if the does not open successfully
 */
 
-int open_file( char *filename, FILE **fp)
-{
-    int number_of_records_by_default_at_start = 0 ;
-    (*fp) = fopen(filename, "rb");
+int open_file( char *filename, FILE **fp){
+    int number_of_records_by_default_at_start = 0;
+    *fp = fopen(filename, "rb");
 
-    //αν δεν υπαρχει ηδη το αρχειο
-    if((*fp) == NULL)
+    // if the file does NOT exist already
+    if(*fp == NULL)
     {
         printf("\n%s does not exist", filename);
-        (*fp) = fopen(filename, "wb+");
-        if((*fp) == NULL){   
+        *fp = fopen(filename, "wb+");
+        if(*fp == NULL){   
             printf("\nERROR AT CREATING THE FILE"); 
             return FALSE; }
 
-        fwrite(&number_of_records_by_default_at_start, sizeof(int), 1, (*fp));
-        rewind((*fp));
+        fwrite(&number_of_records_by_default_at_start, sizeof(int), 1, *fp);
+        rewind(*fp);
         return TRUE;
 
     }
-    else // αν υπαρχει ηδη το αρχειο
+    else // if the file does exist already
     {
         printf("\n%s exist", filename);
-        fclose((*fp));
-        (*fp) = fopen(filename, "rb+");
+        fclose(*fp);
+        *fp = fopen(filename, "rb+");
         return TRUE;
     }
 }
 
-/*
-επιστρεφει 1 αν ολα πηγαν καλα
-επιστρεφει 0 αν υπηρξε προβλημα
-*/
-int show_deposits(FILE *fp, int *n)
+
+int num_deposits(FILE *fp, int *n)
 {   
     int number_read;
-    if(fp == NULL)
-    {   
+    if(fp == NULL){   
         printf("\nFirst open the file");
         return FALSE;
     }
-    else
-    {
+    else{
         number_read = fread(n, sizeof(int), 1, fp);
         rewind(fp);
         if(number_read == 1)
             return TRUE;
-        else
-        {
+        else{
             printf("\nERROR at reading the right amount of data from file");
             return FALSE;
         }
     }
 }
 
-int close_file(FILE *fp) //μπορω να το κανω και με συντομογραφια με ?
-{
+int close_file(FILE *fp) {
     if(!fclose(fp))
         return TRUE;
     else
         return FALSE;
+    //return TRUE ? (!fclose(fp)) : (return FALSE) 
 }
 
-int add_record(FILE *fp)
-{
-    if(fp==NULL)
-        {   printf("First open the file"); 
-            return FALSE;}
+int add_record(FILE *fp){
+    if(fp == NULL){   
+        printf("First open the file"); 
+        return FALSE;}
 
     struct record temp;
     int c1;
     int number_of_deposits;
 
-    show_deposits(fp, &number_of_deposits);
+    num_deposits(fp, &number_of_deposits);
     printf("Give a name: ");
     scanf("%s", temp.name);
     printf("Give an age: ");
     scanf("%d", &temp.age);
 
-    // Μετακινω τον κερσορα μετα τον int n και τα υπολοιπα records
+    // moving the cursor appropriately
     c1 = fseek(fp, 4 + (sizeof(struct record)*number_of_deposits), SEEK_SET);
-    if(c1==1)
-    {
-        printf("Malakia stin metakinisi kersora\n");
+    if(c1==1){
+        printf("Error at moving the cursor\n");
         return FALSE;
     }
 
-    // προσθετω το record στο αρχειο
+    // adding record in the file
     c1 = fwrite(&temp, sizeof(struct record), 1, fp);
-    if(c1==1)
-    {   
-        // αυξανω κατα ενα τον αριθμο των εισαγωγων
+    if(c1==1){   
+        // increasing the number of records
         number_of_deposits++;
         rewind(fp);
         fwrite(&number_of_deposits, sizeof(int), 1, fp);
@@ -251,37 +242,35 @@ int print_record(FILE *fp)
     int check;
     int number_of_deposits;
 
-    check = show_deposits(fp, &number_of_deposits);
+    check = num_deposits(fp, &number_of_deposits);
     
-    if(fp==NULL)
-    {   printf("\nFirst open the file"); 
+    if(fp==NULL){
+        printf("\nFirst open the file"); 
         return FALSE;
     }
-    else if( number_of_deposits == 0)
-    {
+    else if( number_of_deposits == 0){
         printf("\nFirst add records to file"); 
         return FALSE;    
     }
-    else if(check ==0)
-    {
+    else if(check ==0){
         printf("\nError"); 
         return FALSE;        
     }
     
     do{
-    printf("\nGive a number between (1 - %d): ", number_of_deposits);
-    scanf("%d", &ch);
-    
-    if (ch<1 || ch>number_of_deposits)
-        printf("\nyou gave a wrong number");
+        printf("\nGive a number between (1 - %d): ", number_of_deposits);
+        scanf("%d", &ch);
+        
+        if (ch<1 || ch>number_of_deposits)
+            printf("\nyou gave a wrong number");
 
     }while(ch<1 || ch>number_of_deposits);
 
-    // μετακινηση του κερσορα 
+    // moving the cursor
     c1 = fseek(fp, 4 + (sizeof(struct record)*(ch-1)), SEEK_SET);
     if(c1==1)
     {
-        printf("Malakia stin metakinisi kersora\n");
+        printf("Error at moving the cursor\n");
         return FALSE;
     }
 
@@ -304,24 +293,24 @@ int print_all(FILE *fp)
     int check;
     int number_of_deposits;
 
-    check=show_deposits(fp, &number_of_deposits);
+    check=num_deposits(fp, &number_of_deposits);
     
     if(check ==0){
         printf("\nERROR");
         return FALSE;}
 
-    for(i=1; i<=(number_of_deposits+1); i++)
-    {
-        if(i==1)
-        {
+    for(i=1; i<=(number_of_deposits+1); i++){
+        if(i==1){
             check = fread(&m, sizeof(int), 1, fp);
-            if(check != 1) { printf("malakia!"); return FALSE;}
+            if(check != 1) { 
+                printf("Error!"); 
+                return FALSE;
+            }
             printf("\n(number of deposits) n: %d", m);
             printf("\n=========================");
             
         }
-        else
-        {       
+        else{       
             check = fread(&temp, sizeof(struct record), 1, fp);   
             if(check != 1)    
                 return FALSE;
@@ -343,30 +332,28 @@ int modify_record(FILE *fp)
     int ch, check;
     int number_of_deposits;
 
-    check = show_deposits(fp, &number_of_deposits);
+    check = num_deposits(fp, &number_of_deposits);
     
-    if(fp==NULL)
-    {   printf("\nFirst open the file"); 
+    if(fp==NULL){
+        printf("\nFirst open the file"); 
         return FALSE;
     }
-    else if( number_of_deposits == 0)
-    {
+    else if( number_of_deposits == 0){
         printf("\nFirst add records to file"); 
         return FALSE;    
     }
-    else if(check ==0)
-    {
+    else if(check ==0){
         printf("\nError"); 
         return FALSE;        
     }
     
     do{
-    printf("\nGive a number between (1 - %d): ", number_of_deposits);
-    scanf("%d", &ch);
-    
-    if (ch<1 || ch>number_of_deposits)
-        printf("\nyou gave a wrong number");
+        printf("\nGive a number between (1 - %d): ", number_of_deposits);
+        scanf("%d", &ch);
         
+        if (ch<1 || ch>number_of_deposits)
+            printf("\nyou gave a wrong number");
+            
     }while(ch<1 || ch>number_of_deposits);
 
     printf("\nGive a Name: ");
@@ -375,11 +362,10 @@ int modify_record(FILE *fp)
     scanf("%d", &temp.age);
     
 
-    // μετακινηση του κερσορα 
+    // miving the cursor 
     check = fseek(fp, 4 + (sizeof(struct record)*(ch-1)), SEEK_SET);
-    if(check==1)
-    {
-        printf("\nMalakia stin metakinisi kersora\n");
+    if(check==1){
+        printf("\nError at moving the cursor\n");
         return FALSE;
     }
 
@@ -399,14 +385,13 @@ int delete_record(FILE *fp)
     int ch;
     int number_of_deposits;
 
-    show_deposits(fp, &number_of_deposits);
+    num_deposits(fp, &number_of_deposits);
     
-    if(fp==NULL)
-    {   printf("First open the file"); 
+    if(fp==NULL){   
+        printf("First open the file"); 
         return FALSE;
     }
-    else if( number_of_deposits == 0)
-    {
+    else if( number_of_deposits == 0){
         printf("First add records to file"); 
         return FALSE;    
     }
@@ -420,23 +405,24 @@ int delete_record(FILE *fp)
             
     }while(ch<1 || ch>number_of_deposits);
 
-    // μετακινηση του κερσορα για το στην αρχη του τελευταιου στοιχειου 
+     // moving the cursor in the beggining of the last node 
     c1 = fseek(fp, 4 + (sizeof(struct record)*(number_of_deposits-1)), SEEK_SET);
-    if(c1==1)
-    {
-        printf("Malakia stin metakinisi kersora\n");
+    if(c1==1){
+        printf("Error at moving the cursor\n");
         return FALSE;
     }
 
-    // αποθηκευω το τελευταιο στοιχειο στο temp
+    // passing the last node in temp
     fread(&temp, sizeof(struct record), 1, fp);
     
-    // επιστρεφω τον κερσορα στην αρχη και τον τοποθετω στην αρχη του στοιχειου που θελω να διαγραψω και γραφω πανω του το τελευταιο(δηλ. το temp) 
+    // moving back the cursor in the start and placing it in the beggining of the node i want to delete,
+    // i overwrite in the place the last node of the file (meaning temp) 
+
     rewind(fp);
     fseek(fp, 4 + (sizeof(struct record)*(ch-1)), SEEK_SET);
     fwrite(&temp, sizeof(struct record), 1, fp);
 
-    // πρεπει να μειωσω το n στην αρχη του αρχειου
+    // need to decrease the number of deposits in the start of the file
     rewind(fp);
     number_of_deposits--;
     fwrite(&number_of_deposits, sizeof(int), 1, fp);
@@ -455,21 +441,17 @@ int change_pos(FILE *fp)
     int n1, n2;
     int number_of_deposits;
 
-    check = show_deposits(fp, &number_of_deposits);
+    check = num_deposits(fp, &number_of_deposits);
     
-
-
-    if(fp==NULL)
-    {   printf("\nFirst open the file"); 
+    if(fp==NULL){   
+        printf("\nFirst open the file"); 
         return FALSE;
     }
-    else if( number_of_deposits == 0 || number_of_deposits==1 )
-    {
+    else if( number_of_deposits == 0 || number_of_deposits==1 ){
         printf("\nFirst add at least 2 records to file"); 
         return FALSE;    
     }
-    else if(check ==0)
-    {
+    else if(check ==0){
         printf("\nError"); 
         return FALSE;        
     }
@@ -493,48 +475,41 @@ int change_pos(FILE *fp)
             
     }while(n2<1 || n2>number_of_deposits);
 
-    // γραφω στo temp1 το στοιχειο νουμερο1
-
+    // pass to temp1 deposit number1
     fseek(fp, 4 + (sizeof(struct record)*(n1-1)), SEEK_SET);
     check = fread(&temp1, sizeof(struct record), 1, fp);
-    if(check !=1)
-    {
-        printf("\nmalakia sto temp1");
+    if(check !=1){
+        printf("\nError at temp1");
         return FALSE;
     }
     rewind(fp);
 
-    // γραφω στο temp2 το στοιχειο νουμερο n2
-
+    // pass to temp2 deposit number2
     fseek(fp, 4 + (sizeof(struct record)*(n2-1)), SEEK_SET);
     check = fread(&temp2, sizeof(struct record), 1, fp);
-    if(check !=1)
-    {
-        printf("\nmalakia sto temp2");
+    if(check !=1){
+        printf("\nError at temp2");
         return FALSE;
     }
     rewind(fp);
 
-    // γραφω στο νουμερο n1 το στοιχειο n2
+    // overwrite on  number1 number2 element 
     fseek(fp, 4 + (sizeof(struct record)*(n1-1)), SEEK_SET);
     check = fwrite(&temp2, sizeof(struct record), 1, fp);
-    if(check !=1)
-    {
-        printf("\nmalakia sto grapsimo tou temp1 ");
+    if(check !=1){
+        printf("\nError at overwriting ");
         return FALSE;
     }
     rewind(fp);
 
-    // γραφω στο νουμερο n1 το στοιχειο n2
+    // overwrite on  number2 number1 element 
     fseek(fp, 4 + (sizeof(struct record)*(n2-1)), SEEK_SET);
     check = fwrite(&temp1, sizeof(struct record), 1, fp);
-    if(check !=1)
-    {
-        printf("\nmalakia sto grapsimo tou temp2 ");
+    if(check !=1){
+        printf("\nError at overwriting");
         return FALSE;
     }
     rewind(fp);
     return TRUE;
     
-
 }
