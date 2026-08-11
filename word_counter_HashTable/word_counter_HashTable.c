@@ -50,10 +50,7 @@ int main()
 
     start = clock();
 
-    char filename1[] = "test.txt";
-    char filename2[] = "random_lines.txt";
-    char filename3[] = "book.txt";
-    
+    char filename[] = "random_lines.txt";
     int sum_words;
     
     
@@ -61,7 +58,7 @@ int main()
     init_hash_table(hash_table);
 
     // STEP-2
-    HashTable_words(hash_table, filename1);
+    HashTable_words(hash_table, filename);
     print_table(hash_table);
 
     sum_words = sum_words_total(hash_table);
